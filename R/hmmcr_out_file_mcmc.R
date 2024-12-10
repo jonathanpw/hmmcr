@@ -15,8 +15,8 @@ trace_plot = function( chain, n_post, steps, burnin){
 	par(mfrow=c(3, 2))
 	for(r in c(3:ncol(chain),1:2)){
 
-		plot( NULL, xlab=NA, ylab=NA, xlim=c(1,length(index_post)),                           ylim=range(chain[,r]) )
-
+		plot( NULL, xlab=NA, ylab=NA, xlim=c(1,length(index_post)), 
+		      ylim=range(chain[,r]) )
 		lines( chain[,r], type='l', col='black')
 
 		par_mean[r] = round( mean(chain[,r]), 4)
@@ -27,7 +27,7 @@ trace_plot = function( chain, n_post, steps, burnin){
 		hist( chain[,r], ylab=NA, main=NA, freq=F,
 			    breaks=sqrt(nrow(chain)),
 		      xlab=paste0('Mean = ',toString(par_mean[r]),
-					             ' Median = ',toString(par_median[r])))
+				  ' Median = ',toString(par_median[r])))
 		abline( v=upper[r], col='red', lwd=2, lty=2)
 		abline( v=lower[r], col='purple', lwd=2, lty=2)
 	}
