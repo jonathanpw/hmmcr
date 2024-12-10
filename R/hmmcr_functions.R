@@ -1,7 +1,7 @@
 # rm(list = ls())
 #
-# 
-# seed = 1
+#
+# seed = 2
 # set.seed(seed)
 
 library(Rcpp, quietly=T)
@@ -27,7 +27,7 @@ Rcpp::sourceCpp("src/hmmcr_mcmc.cpp")
 # .hmmcr_make_par_index <- function(nr_states, nr_zeta, nr_beta, nr_theta) {
 #   c(rep(0, nr_states - 1), rep(1, nr_zeta), rep(2, nr_beta), rep(3, nr_theta))
 # }
-# 
+#
 # .hmmcr_make_par_init <- function(par_index) {
 #   return(rnorm(n = length(par_index), mean = 0, sd = 20))
 # }
@@ -38,7 +38,7 @@ Rcpp::sourceCpp("src/hmmcr_mcmc.cpp")
   par_index <- rep(0, nr_states - 1)
   par_init <- rnorm(nr_states - 1, mean = 0, sd = 1)
   par_unique <- 1:(nr_states - 1)
-  
+
   if (model == "ingarch") {
 
     # zeta
@@ -60,49 +60,49 @@ Rcpp::sourceCpp("src/hmmcr_mcmc.cpp")
     par_init <- c(par_init, rnorm(nr_states + 1, mean = 0, sd = 1)) # rnorm(nr_theta, mean = 0, sd = 20))
     par_unique <- c(par_unique, max(par_unique) + c(rbind(1:nr_states, nr_states + 1)))
   }
-  
+
   if (model == "poisson") {
-    
+
     # zeta
     nr_zeta <- col_z*(nr_states)*(nr_states - 1)
     par_index <- c(par_index, rep(1, nr_zeta))
     par_init <- c(par_init, rep(0.0, nr_zeta))
     par_unique <- c(par_unique, max(par_unique) + 1:nr_zeta)
-    
+
     # beta
-    nr_beta <- col_x*nr_states 
+    nr_beta <- col_x*nr_states
     par_index <- c(par_index, rep(2, nr_beta))
     par_init <- c(par_init, rep(0.0, nr_beta))
     # par_init <- c(par_init, 5, 0, 5, 0, 5, 0)
-    par_unique <- c(par_unique, max(par_unique) + 1:nr_beta) 
+    par_unique <- c(par_unique, max(par_unique) + 1:nr_beta)
 
   }
-  
+
   if (model == "gaussian") {
-    
+
     # zeta
     nr_zeta <- col_z*(nr_states)*(nr_states - 1)
     par_index <- c(par_index, rep(1, nr_zeta))
     par_init <- c(par_init, rep(0.0, nr_zeta))
     par_unique <- c(par_unique, max(par_unique) + 1:nr_zeta)
-    
+
     # beta
-    nr_beta <- col_x*nr_states 
+    nr_beta <- col_x*nr_states
     par_index <- c(par_index, rep(2, nr_beta))
     par_init <- c(par_init, rep(0.0, nr_beta))
-    par_unique <- c(par_unique, max(par_unique) + 1:nr_beta) 
-    
+    par_unique <- c(par_unique, max(par_unique) + 1:nr_beta)
+
     # theta
     nr_theta <- nr_states
     par_index <- c(par_index, rep(3, nr_theta))
     par_init <- c(par_init, rnorm(nr_states, mean = 0, sd = 1))
     par_unique <- c(par_unique, max(par_unique) + rbind(1:nr_states))
-    
+
   }
-  
+
   par_index_unique <- par_index[(par_unique > 0) & !duplicated(par_unique)]
   par_groups <-list(which(par_index_unique!=1)-1, c(which(par_index_unique==1))-1)
-  
+
 
   return(list(par_index = par_index, par_init = par_init, par_unique = par_unique, par_groups = par_groups))
 }
@@ -135,29 +135,29 @@ hmmcr <- function(formula_response,
                   burnin = 100,
                   steps = 1000,
                   par = list(init = NULL, index = NULL, unique = NULL, lower = NULL, upper = NULL, prior = NULL, group = NULL),
-                  # prior = list(par, index), 
+                  # prior = list(par, index),
                   normalize = TRUE,
                   data = NULL) {
 
-  # TODO: 
-  # 1) introduce a par_lower and par_upper? 
-  # 2) introducing constraints to parameters (via prior) is complicated? 
+  # TODO:
+  # 1) introduce a par_lower and par_upper?
+  # 2) introducing constraints to parameters (via prior) is complicated?
   # 3) make a prior class and in addition to model add prior as to select type of prior
-  # 4) add model to Para or Prior class and add para conditions here. 
+  # 4) add model to Para or Prior class and add para conditions here.
   # 5) add prior_par and prior_par_index
   # 6) change to model = "normal-ingarch" to "normal::ingarch::3" where the last number is the size of rolling window, then we need a new hyper_par and hyper_par_index thing for this
   # 7) check std::isfinite() and perhaps let log_post and log_fn_fun and log_fn_i_fun return std::infinite?
   # 8) rename log_fn_fun and log_fn_i_fun to log_f and log_f_i or log_density
-  # 9) add check of input 
-  # 10) make par_unique start at 0 
-  
+  # 9) add check of input
+  # 10) make par_unique start at 0
+
   mf_response <- model.frame(formula_response, data)
   mf_state <- model.frame(formula_state, data)
 
 
   # check stuff ----------------------------------------------------------------
   if (is.character(index)) {
-    # data_index <- NULL 
+    # data_index <- NULL
     # try(eval(parse(text = paste("data_index <-", index))))
     stopifnot(index %in% colnames(data))
     data_index <- data[[index]]
@@ -235,21 +235,21 @@ hmmcr <- function(formula_response,
   par_prior <- .hmmcr_make_prior_par(par_init, model = model)
   # ----------------------------------------------------------------------------
   # par_init <- par_init*0
-  
+
   # print(par_init)
   # print(par_prior)
   # print(cbind(par_index, par_unique))
-  
+
   # print(summary(data_y))
   # print(summary(data_X))
   # print(summary(data_Z))
-  
+
   # model_int <- 0
   # if (model == "poisson") {model_int <- 1}
   # if (model == "gaussian") {model_int <- 2}
-  
-  
-  
+
+
+
   # mcmc -----------------------------------------------------------------------
   mcmc_out = mcmc_routine(par_init = par_init,
                           par_index = par_index,
@@ -266,12 +266,12 @@ hmmcr <- function(formula_response,
                           steps = steps,
                           burnin = burnin)
   # ----------------------------------------------------------------------------
-  
+
   # summary and post-processing ------------------------------------------------
-  
-  
+
+
   # ----------------------------------------------------------------------------
-  
+
 }
 
 
