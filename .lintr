@@ -1,12 +1,8 @@
-linters: lintr::with_defaults(
-  line_length_linter = lintr::line_length_linter(100),    # Maximum 100 characters per line
-  object_name_linter = lintr::object_name_linter(         # Variable names in snake_case or camelCase
+linters: lintr::linters_with_defaults(
+  line_length_linter = lintr::line_length_linter(100),
+  object_name_linter = lintr::object_name_linter(
     styles = c("snake_case", "camelCase")
   ),
-  commented_code_linter = NULL                           # Ignores commented-out code
-)
+  commented_code_linter = NULL)
+exclude: "src/,tests/testthat/"
 
-exclude: list(                                           # Files to exclude from linting
-  "src/",                                                # Exclude C++ files
-  "tests/testthat/"
-)
