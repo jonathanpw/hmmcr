@@ -1,7 +1,6 @@
 #include <RcppArmadillo.h>
 #include <vector>
 #include <stdexcept>
-#include <chrono> // gud: For timing
 
 using namespace Rcpp;
 
@@ -10,14 +9,13 @@ using namespace Rcpp;
 #include "hmmcr_bookkeeping.h"
 
 
-
 void debugPrint(const Para& manager) {
   std::cout << "=== Debug Output for ParManager ===" << std::endl;
 
-  // Init 
+  // Init
   std::cout << "Init vector" << std::endl;
   std::cout << manager.getInit() << std::endl;
-  
+
   // Beta matrix
   const arma::mat& beta = manager.getBeta();
   std::cout << "Beta Matrix (" << beta.n_rows << " x " << beta.n_cols << "):" << std::endl;
@@ -55,12 +53,10 @@ void debugPrint(const Para& manager) {
 }
 
 
-
 // [[Rcpp::export]]
 double log_Gaussian( arma::vec y, arma::vec pars) {
-	return -arma::sum(pow(y-pars(0),2)/(2*exp(pars(1))) + .5*pars(1));
+  return -arma::sum(pow(y-pars(0),2)/(2*exp(pars(1))) + .5*pars(1));
 }
-
 
 
 
@@ -75,7 +71,7 @@ Rcpp::List mcmc_routine( const arma::vec par_index,
                          const arma::mat S,
                          const arma::vec id,
                          const std::string model,
-                         const int nr_states, 
+                         const int nr_states,
                          const Rcpp::List groups,
                          const int steps,
                          const int burnin){
@@ -97,30 +93,17 @@ Rcpp::List mcmc_routine( const arma::vec par_index,
     arma::uvec ind_j = groups(j);
     pcov.push_back(arma::eye( ind_j.n_rows, ind_j.n_rows));
   }
-  
+
   arma::vec pscale( n_groups, arma::fill::value(.01));
   arma::mat temp_chain( 1000, n_pars, arma::fill::zeros);
 
-
   // gudmund: New par object
-  Para para(par_init, par_index, par_unique, Z, X, nr_states);
+  Para para(par_init, par_index, par_unique, Z, X, nr_states, model);
   para.setPara(par_init);
 
-  // gudmund: debug
-  // debugPrint(para);
-  // std::cout << model << std::endl;
-  // std::cout << para.getZeta(1, 2) << std::endl;
-  // std::cout << para.getZeta(1, 3) << std::endl;
-  // std::cout << para.getZeta(2, 1) << std::endl;
-  // std::cout << para.getZeta(2, 3) << std::endl;
-  // std::cout << para.getZeta(3, 1) << std::endl;
-  // std::cout << para.getZeta(3, 2) << std::endl;
-  // gudmund: debug
-
+  // debugPrint(para); // gud
 
   // Evaluate the log_post of the initial pars
-
-  // std::cout << 1 << std::endl;
   double targ_prev = log_post(par_prior,
                               para,
                               y,
@@ -130,9 +113,6 @@ Rcpp::List mcmc_routine( const arma::vec par_index,
                               id,
                               model);
 
-  // debug
-  // std::cout << targ_prev << "\n";
-
   if(!std::isfinite(targ_prev)){
     std::cout << targ_prev << "\n";
     std::cout << "Infinite log-posterior; change initial parameters" << "\n";
@@ -140,11 +120,6 @@ Rcpp::List mcmc_routine( const arma::vec par_index,
   }
 
   arma::vec accept( n_groups, arma::fill::zeros);
-
-  // auto start_time = std::chrono::steady_clock::now(); //gud
-  // auto end_time = std::chrono::steady_clock::now(); // gud
-  // double targ_debug = 0.0;
-
 
   // Begin the MCMC algorithm --------------------------------------------------
   for(unsigned int ttt = 1; ttt < steps; ttt++){
@@ -246,11 +221,13 @@ Rcpp::List mcmc_routine( const arma::vec par_index,
       // std::chrono::duration<double> elapsed_time = end_time - start_time;
       // std::cout << "Iteration " << ttt
       //           << " completed in " << elapsed_time.count() << " seconds.\n";
-      // 
+      //
       // start_time = std::chrono::steady_clock::now();
     }
   }
   // ---------------------------------------------------------------------------
+
+  debugPrint(para); // gud
 
   std::cout << accept/(steps-burnin) << "\n";
   return Rcpp::List::create( chain, pscale, pcov);

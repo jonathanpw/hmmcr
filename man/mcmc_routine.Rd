@@ -85,55 +85,44 @@ mcmc_routine( data, init_par, prior_par, par_index, steps, burnin)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-rm(list = ls())
 
-library(data.table)
+# Example 1 --------------------------------------------------------------------
+
 
 seed = 1
 set.seed(seed)
 
 
-n = 900
-x = rnorm(n)
-beta = matrix( c(-10, .1,
+# simulate and plot data
+n <- 900
+x <- rnorm(n)
+
+beta <- matrix( c(-10, .1,
                   1,  .1,
                   2,  .2), ncol=2, byrow=T)
 
 
-zeta = c(-3, -2, -1, -1, -4, -2)
-q = zeta
-Q = matrix(c(1,         exp(q[1]), exp(q[2]),
+zeta <- c(-3, -2, -1, -1, -4, -2)
+
+q <- zeta
+Q <- matrix(c(1,        exp(q[1]), exp(q[2]),
              exp(q[3]),         1, exp(q[4]),
              exp(q[5]), exp(q[6]),         1), ncol=3, byrow=T)
-P = Q / rowSums(Q)
+P <- Q / rowSums(Q)
 
 
-s = rep( NA, n); s[1] = sample( x=1:3, size=1, prob=c(.8, .15, .05))
-y = rep( NA, n); y[1] = rpois( n=1, lambda=exp(c(1,x[1])\%*\%beta[s[1],]))
+s <- rep( NA, n); s[1] <- sample( x=1:3, size=1, prob=c(.8, .15, .05))
+y <- rep( NA, n); y[1] <- rpois( n=1, lambda=exp(c(1,x[1])\%*\%beta[s[1],]))
 
 for( i in 2:n){
-  s[i] = sample( x=1:3, size=1, prob=P[s[i-1],])
-  y[i] = rpois( n=1, lambda=exp(c(1,x[i])\%*\%beta[s[i],]))
+  s[i] <- sample( x=1:3, size=1, prob=P[s[i-1],])
+  y[i] <- rpois( n=1, lambda=exp(c(1,x[i])\%*\%beta[s[i],]))
 }
+
 plot(y)
 
-# Example 1 --------------------------------------------------------------------
-
-# TODO:
-# markov model
-# state sampler
-
-# plot:
-# hmmcr_plot_trace()
-# hmmcr_plot_hist()
-# hmmcr_summary(example_1)
-
-# summary table:
-# parameters: mean, median, sd, quantiles, ...
-# transition prob. matrix evaluated at the mean, median, quantile, ...
-
-
-data_1 <- data.table(
+# setup and run hmmcr
+data <- data.frame(
   y = y,
   state = "1::2::3",
   x = x,
@@ -142,9 +131,9 @@ data_1 <- data.table(
   group = 1
 )
 
-burnin = 5000
-steps = 50000
-n_post = 10000
+burnin <- 5000
+steps <- 50000
+n_post <- 10000
 
 mcmc_out <- hmmcr(formula_response = y ~ x,
                    formula_state = state ~ -1 + z,
@@ -154,23 +143,24 @@ mcmc_out <- hmmcr(formula_response = y ~ x,
                    steps = steps,
                    data = data_1,
                    model = "poisson")
-# ------------------------------------------------------------------------------
 
-index_post = (steps - burnin - n_post + 1):(steps - burnin)
+index_post <- (steps - burnin - n_post + 1):(steps - burnin)
 
-init <- c(1, exp(colMeans(mcmc_out[[1]][index_post, 1:2])))
+init <- c(1, exp(colMeans(mcmc_out$output[[1]][index_post, 1:2])))
 print(init/sum(init))
 
-zeta <- colMeans(mcmc_out[[1]][index_post, 3:8])
+zeta <- colMeans(mcmc_out$output[[1]][index_post, 3:8])
 print(zeta)
 
-beta <- colMeans(mcmc_out[[1]][index_post, -(1:8)])
+beta <- colMeans(mcmc_out$output[[1]][index_post, -(1:8)])
 print(beta)
 
+save(mcmc_out$output, file = paste0("mcmc_pars_", seed, ".rda"))
+trace_plot(mcmc_out$output[[1]], n_post, steps, burnin)
 
-save( mcmc_out, file=paste0("mcmc_pars_",seed,".rda"))
-trace_plot( mcmc_out[[1]], n_post, steps, burnin)
 print("See the generated file trace_plot.pdf in the working directory")
+
+# ------------------------------------------------------------------------------
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

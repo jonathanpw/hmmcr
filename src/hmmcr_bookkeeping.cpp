@@ -1,3 +1,4 @@
+// Para.h
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -5,46 +6,53 @@ using namespace Rcpp;
 
 #include "hmmcr_bookkeeping.h"
 
-
 Para::Para(const arma::vec& par_init,
-     const arma::vec& par_index,
-     const arma::vec& par_unique,
-     const arma::mat& Z,
-     const arma::mat& X,
-     const int nr_state)
-  :
-  par_index(par_index),
-  par_unique(par_unique),
-  nr_state(nr_state),
-  nr_col_Z(Z.n_cols),
-  nr_col_X(X.n_cols)
+           const arma::vec& par_index,
+           const arma::vec& par_unique,
+           const arma::mat& Z,
+           const arma::mat& X,
+           const int nr_state,
+           const std::string model)
+  : par_index(par_index),
+    par_unique(par_unique),
+    nr_state(nr_state),
+    nr_col_Z(Z.n_cols),
+    nr_col_X(X.n_cols),
+    nr_col_theta(1),
+    m_par(par_init.n_elem),
+    init(nr_state),
+    zeta(nr_state * (nr_state - 1), nr_col_Z),
+    beta(nr_state, nr_col_X)
 {
-  par.zeros(par_init.n_elem);
+  m_par.zeros(par_init.n_elem);
   init.ones(nr_state);
   zeta.zeros(nr_state * (nr_state - 1), nr_col_Z);
   beta.zeros(nr_state, nr_col_X);
-  theta.zeros(nr_state, 2);
+
+  if (model == "ingarch") {
+    nr_col_theta = 2;
+  }
+
+  theta.zeros(nr_state, nr_col_theta);
 
   setPara(par_init);
 }
 
-void Para::setPara(const arma::vec& new_par) {
-  if (new_par.n_elem != par.n_elem) {
-    throw std::invalid_argument("new_par has incorrect size.");
-  }
+void Para::setPara(const arma::vec& par) {
 
-  par = new_par;
+  m_par = par;
 
   // indexes
   std::vector<size_t> k = {1, 0, 0, 0};
   std::vector<size_t> l = {0, 0, 0, 0};
 
   for (size_t i = 0; i < par_unique.size(); ++i) {
+
     int par_index_i = par_index[i];
     int par_unique_i = par_unique[i];
 
     // get values or set to default
-    double value = (par_unique_i > 0) ? par(par_unique_i - 1) : 0.0;
+    double value = (par_unique_i > 0) ? m_par(par_unique_i - 1) : 0.0;
 
     switch (par_index_i) {
 
@@ -70,7 +78,7 @@ void Para::setPara(const arma::vec& new_par) {
     }
     case 3: { // theta
       theta(k[3], l[3]++) = exp(value);
-      if (l[3] >= 2) {
+      if (l[3] >= nr_col_theta) {
         l[3] = 0;
         k[3]++;
       }
@@ -83,7 +91,7 @@ void Para::setPara(const arma::vec& new_par) {
 }
 
 arma::vec Para::getPara() const {
-  return par;
+  return m_par;
 }
 
 arma::vec Para::getInit() const {

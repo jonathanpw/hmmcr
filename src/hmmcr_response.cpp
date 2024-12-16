@@ -29,7 +29,6 @@ void compute_Pi_matrix(arma::mat& Pi, const arma::vec& z, const Para& para) {
   }
 }
 
-
 void compute_D_matrix(arma::mat &D, const arma::vec& y, const arma::mat& x, const Para& para, const int k, const std::string model) {
 
   // Make D a clean diagonal matrix
@@ -40,7 +39,7 @@ void compute_D_matrix(arma::mat &D, const arma::vec& y, const arma::mat& x, cons
     if (k > 3) {
 
       for (int i = 0; i < D.n_rows; i++) {
-        
+
         double size_i = para.getTheta(i)(0);
         double c_i = para.getTheta(i)(1);
 
@@ -54,39 +53,45 @@ void compute_D_matrix(arma::mat &D, const arma::vec& y, const arma::mat& x, cons
   }
   // -----------------------------------------------------------------------------------------------
 
-  
+
   // Poisson ---------------------------------------------------------------------------------------
   if (model == "poisson") {
-    
+
     // std::cout << "poisson" << std::endl;
-    
+
     for (int i = 0; i < D.n_rows; i++) {
-      
+
       // std::cout << exp(arma::dot(x.row(k), para.getBeta(i))) << std::endl;
-      
+
       D(i, i) = R::dpois(y(k), exp(arma::dot(x.row(k), para.getBeta(i))), false);
     }
   }
   // -----------------------------------------------------------------------------------------------
-  
-  
+
+
   // Gaussian --------------------------------------------------------------------------------------
-  // if (model == "gaussian") {
-  //   for (int i = 0; i < D.n_rows; i++) {
-  //     double sigma_i = para.getTheta(i)(0);
-  //     D(i, i) = R::dnorm(y(k), arma::dot(x.row(k), para.getBeta(i)), sigma_i, false);
-  //   }
-  // }
+  if (model == "gaussian") {
+    for (int i = 0; i < D.n_rows; i++) {
+      double sigma_i = para.getTheta(i)(0);
+      D(i, i) = R::dnorm(y(k), arma::dot(x.row(k), para.getBeta(i)), sigma_i, false);
+    }
+  }
   // -----------------------------------------------------------------------------------------------
-  
-  
+
+
   // log-Gaussian ----------------------------------------------------------------------------------
+  if (model == "log-gaussian") {
+    for (int i = 0; i < D.n_rows; i++) {
+      double sigma_i = para.getTheta(i)(0);
+      D(i, i) = R::dlnorm(y(k), arma::dot(x.row(k), para.getBeta(i)), sigma_i, false);
+    }
+  }
   // -----------------------------------------------------------------------------------------------
-  
-  
+
+
   // NB --------------------------------------------------------------------------------------------
   // -----------------------------------------------------------------------------------------------
-  
+
 }
 
 
