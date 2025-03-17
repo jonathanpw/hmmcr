@@ -12,20 +12,7 @@ mcmc_routine( data, init_par, prior_par, par_index, steps, burnin)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{par_index}{A vector of indicies for each of the HMM parameters.
-  Indices must be specified in the order: ``pi_logit'' (initial state probability
-  parameters), ``zeta'' (transition rate parameters), ``beta'' (response
-  function coefficient parameters), ``log_a_vec'' (baseline response function
-  parameters), and ``log_c'' (negative binomial probability parameter).}
-
-  \item{init_par}{A vector specifying the initial values for each HMM parameter,
-  where the order of the parameters is as specified in the par_index argument.}
-
-  \item{prior_par}{A vector twice the length of par_index the, the first half of
-  the components specifying the prior mean for each HMM parameter, and the
-  second half of the components specifying the prior standard deviation for each
-  HMM parameter.  The order of the parameters is as specified in the par_index
-  argument.}
+  \item{data}{A list containing the following components:}
 
   \item{y}{A vector of fatality counts corresponding to each time index and each
   country.}
@@ -48,6 +35,21 @@ mcmc_routine( data, init_par, prior_par, par_index, steps, burnin)
   corresponding to a country index value.}
 
   \item{model}{Only model 0 is available for now.}
+
+  \item{par_index}{A vector of indicies for each of the HMM parameters.
+  Indices must be specified in the order: ``pi_logit'' (initial state probability
+  parameters), ``zeta'' (transition rate parameters), ``beta'' (response
+  function coefficient parameters), ``log_a_vec'' (baseline response function
+  parameters), and ``log_c'' (negative binomial probability parameter).}
+
+  \item{init_par}{A vector specifying the initial values for each HMM parameter,
+  where the order of the parameters is as specified in the par_index argument.}
+
+  \item{prior_par}{A vector twice the length of par_index the, the first half of
+  the components specifying the prior mean for each HMM parameter, and the
+  second half of the components specifying the prior standard deviation for each
+  HMM parameter.  The order of the parameters is as specified in the par_index
+  argument.}
 
   \item{groups}{A list, each component of which is a vector of indices to be
   updated together in a Metropolis-within-Gibbs fashion.  The number of list
@@ -122,7 +124,7 @@ for( i in 2:n){
 plot(y)
 
 # setup and run hmmcr
-data <- data.frame(
+data_1 <- data.frame(
   y = y,
   state = "1::2::3",
   x = x,
