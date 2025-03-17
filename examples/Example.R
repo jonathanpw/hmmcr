@@ -55,7 +55,7 @@ mcmc_out <- hmmcr(formula_response = y ~ x,
                   data = data_1,
                   model = "poisson")
 
-index_post <- (steps - burnin - n_post + 1):(steps - burnin)
+index_post <- (steps - n_post + 1):steps
 
 init <- c(1, exp(colMeans(mcmc_out$output[[1]][index_post, 1:2])))
 print(init/sum(init))
@@ -71,3 +71,50 @@ save(save_object, file = paste0("mcmc_pars_", seed, ".rda"))
 trace_plot(mcmc_out$output[[1]], n_post, steps, burnin)
 
 print("See the generated file trace_plot.pdf in the working directory")
+
+
+summary.hmmcr <- function(object, ...) {
+  if (!inherits(object, "hmmcr")) {
+    stop("The object is not of class 'hmmcr'")
+  }
+
+  index_post <- (object$steps - n_post + 1):object$steps
+
+  init <- c(1, exp(colMeans(object$output[[1]][index_post, 1:2])))
+  zeta <- colMeans(object$output[[1]][index_post, 3:8])
+  beta <- colMeans(object$output[[1]][index_post, -(1:8)])
+
+  # Organize details of summary
+  summary_list <- list(
+    init, zeta, beta)
+
+  class(summary_list) <- "summary.hmmcr"
+  return(summary_list)
+}
+
+# Print function for hmmcr objects
+print.hmmcr <- function(x, ...) {
+  if (!inherits(x, "hmmcr")) {
+    stop("The object is not of class 'hmmcr'")
+  }
+
+  cat("Hidden Markov Model - MCMC Results:\n\n")
+  cat("Output Summary:\n")
+
+  # Use the summary method for concise details
+  summary_out <- summary(x)
+
+  for (param in names(summary_out$parameters)) {
+    cat("\nParameter:", param, "\n")
+    param_summary <- summary_out$parameters[[param]]
+    cat("Mean:", param_summary$mean, "\n")
+    cat("SD:", param_summary$sd, "\n")
+    cat("Median:", param_summary$median, "\n")
+    cat("2.5% Quantile:", param_summary$q2.5, "\n")
+    cat("97.5% Quantile:", param_summary$q97.5, "\n")
+  }
+
+  cat("\nMCMC Steps:", summary_out$total_steps, "\nBurn-In Period:", summary_out$burnin, "\n")
+}
+
+# You can add these functions to your R environment for use with objects returned by the hmmcr function

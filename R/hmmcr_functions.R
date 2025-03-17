@@ -441,5 +441,11 @@ hmmcr <- function(formula_response,
   # summary and post-processing ------------------------------------------------
   # ----------------------------------------------------------------------------
 
-  return(list(output = mcmc_out))
+
+  hmmcr_output <- list(output = mcmc_out)
+  hmmcr_output$steps <- steps
+  hmmcr_output$burnin <- burnin
+  class(hmmcr_output) <- "hmmcr"
+
+  return(hmmcr_output)
 }
